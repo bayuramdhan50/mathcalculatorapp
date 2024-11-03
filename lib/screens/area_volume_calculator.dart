@@ -9,99 +9,147 @@ class _AreaVolumeCalculatorState extends State<AreaVolumeCalculator> {
   final _lengthController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
-  String _resultArea = '';
-  String _resultVolume = '';
+  final _radiusController = TextEditingController();
 
-  void _calculateArea() {
-    final double length = double.tryParse(_lengthController.text) ?? 0;
-    final double width = double.tryParse(_widthController.text) ?? 0;
+  String _result = '';
+  String _selectedShape = 'Balok';
 
-    if (length > 0 && width > 0) {
-      final double area = length * width;
-      setState(() {
-        _resultArea = 'Luas: ${area.toStringAsFixed(2)} m²';
-      });
-    }
-  }
-
-  void _calculateVolume() {
+  void _calculate() {
     final double length = double.tryParse(_lengthController.text) ?? 0;
     final double width = double.tryParse(_widthController.text) ?? 0;
     final double height = double.tryParse(_heightController.text) ?? 0;
+    final double radius = double.tryParse(_radiusController.text) ?? 0;
 
-    if (length > 0 && width > 0 && height > 0) {
-      final double volume = length * width * height;
-      setState(() {
-        _resultVolume = 'Volume: ${volume.toStringAsFixed(2)} m³';
-      });
-    }
+    setState(() {
+      switch (_selectedShape) {
+        case 'Balok':
+          if (length > 0 && width > 0 && height > 0) {
+            final double area = length * width;
+            final double volume = length * width * height;
+            _result =
+                'Luas: ${area.toStringAsFixed(2)} m²\nVolume: ${volume.toStringAsFixed(2)} m³';
+          } else {
+            _result =
+                'Masukkan panjang, lebar, dan tinggi yang valid untuk Balok.';
+          }
+          break;
+        case 'Kubus':
+          if (length > 0) {
+            final double area = 6 * length * length;
+            final double volume = length * length * length;
+            _result =
+                'Luas Permukaan: ${area.toStringAsFixed(2)} m²\nVolume: ${volume.toStringAsFixed(2)} m³';
+          } else {
+            _result = 'Masukkan panjang sisi yang valid untuk Kubus.';
+          }
+          break;
+        case 'Silinder':
+          if (radius > 0 && height > 0) {
+            final double area = 2 * 3.14 * radius * (radius + height);
+            final double volume = 3.14 * radius * radius * height;
+            _result =
+                'Luas Permukaan: ${area.toStringAsFixed(2)} m²\nVolume: ${volume.toStringAsFixed(2)} m³';
+          } else {
+            _result =
+                'Masukkan jari-jari dan tinggi yang valid untuk Silinder.';
+          }
+          break;
+        case 'Bola':
+          if (radius > 0) {
+            final double area = 4 * 3.14 * radius * radius;
+            final double volume = (4 / 3) * 3.14 * radius * radius * radius;
+            _result =
+                'Luas Permukaan: ${area.toStringAsFixed(2)} m²\nVolume: ${volume.toStringAsFixed(2)} m³';
+          } else {
+            _result = 'Masukkan jari-jari yang valid untuk Bola.';
+          }
+          break;
+        default:
+          _result = 'Pilih bangunan yang ingin dihitung.';
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Perhitungan Luas & Volume'),
+        title: Text('Perhitungan Luas & Volume Bangunan'),
         backgroundColor: Colors.blueAccent,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _lengthController,
-              decoration: InputDecoration(
-                labelText: 'Panjang (m)',
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              keyboardType: TextInputType.number,
+            DropdownButton<String>(
+              value: _selectedShape,
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedShape = newValue!;
+                  _result = '';
+                });
+              },
+              items: <String>['Balok', 'Kubus', 'Silinder', 'Bola']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
-            TextField(
-              controller: _widthController,
-              decoration: InputDecoration(
-                labelText: 'Lebar (m)',
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
+            SizedBox(height: 10),
+            if (_selectedShape == 'Balok' || _selectedShape == 'Kubus')
+              _buildTextField(_lengthController, 'Panjang (m)'),
+            if (_selectedShape == 'Balok')
+              _buildTextField(_widthController, 'Lebar (m)'),
+            if (_selectedShape == 'Balok' || _selectedShape == 'Silinder')
+              _buildTextField(_heightController, 'Tinggi (m)'),
+            if (_selectedShape == 'Silinder' || _selectedShape == 'Bola')
+              _buildTextField(_radiusController, 'Jari-jari (m)'),
+            SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Text('Hitung', style: TextStyle(fontSize: 16)),
               ),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _heightController,
-              decoration: InputDecoration(
-                labelText: 'Tinggi (m)',
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              keyboardType: TextInputType.number,
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _calculateArea,
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              child: Text('Hitung Luas'),
-            ),
-            ElevatedButton(
-              onPressed: _calculateVolume,
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              child: Text('Hitung Volume'),
-            ),
-            SizedBox(height: 20),
+            Divider(color: Colors.grey),
+            SizedBox(height: 10),
             Text(
-              _resultArea,
-              style: TextStyle(fontSize: 24, color: Colors.blueAccent),
-            ),
-            Text(
-              _resultVolume,
-              style: TextStyle(fontSize: 24, color: Colors.blueAccent),
+              _result,
+              style: TextStyle(fontSize: 20, color: Colors.blueAccent),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          filled: true,
+          fillColor: Colors.grey[200],
+        ),
+        keyboardType: TextInputType.number,
       ),
     );
   }
